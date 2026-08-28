@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="toolbar">
+  <a href="/">← 返回看板</a>
+  <label>Worker ID：<input id="worker-id" value="worker-demo-9" size="14"></label>
+  <button class="btn" onclick="claimNext({{ task.id }})">认领下一个 pending 任务</button>
+  {% if task.status == 'claimed' and task.claim_token %}
+    <button class="btn" onclick="startTask({{ task.id }}, '{{ task.claim_token }}')">启动任务（生成参数快照）</button>
+  {% endif %}
+  {% if task.status == 'running' and task.current_step %}
+    <button class="btn five" data-task-id="{{ task.id }}"
+            data-seq="{{ task.current_step }}"
+            data-token="{{ task.claim_token }}"
+            onclick="completeFive(this)">五次并发完成上报</button>
+  {% endif %}
+</section>
+
+<div id="api-result" class="api-result"></div>
+
+<div id="task-detail"
+     hx-get="/partials/task-detail/{{ task.id }}"
+     hx-trigger="every 2s"
+     hx-swap="innerHTML">
+  {% include "_task_detail.html" %}
+</div>
+{% endblock %}

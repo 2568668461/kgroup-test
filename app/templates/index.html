@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="toolbar">
+  <label>Worker ID：<input id="worker-id" value="worker-demo-9" size="14"></label>
+  <button class="btn" onclick="claimNext()">认领下一个 pending 任务</button>
+  <button class="btn" onclick="resetDemo()">重置演示数据</button>
+  <span class="muted">表格每 2 秒自动刷新</span>
+</section>
+
+<div id="api-result" class="api-result"></div>
+
+<div id="task-table"
+     hx-get="/partials/task-table"
+     hx-trigger="every 2s"
+     hx-swap="innerHTML">
+  {% include "_task_table.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+# 并发证据存档
+
+本目录保存真实多进程并发测试的完整输出（`--evidence` 参数追加写入）。
+
+## 认领压测（concurrency_claim_test.py）
+
+命令：`python scripts/concurrency_claim_test.py --evidence`
+
+- 10 个 worker 进程（`multiprocessing` spawn 模式，每进程独立 psycopg 连接）
+- 每轮 100 个 pending 任务，连续 20 轮
+- 校验：总认领数 = 2000，唯一任务 ID = 2000，重复 = 0，每轮剩余 pending = 0
+
+结果文件：[`claim_concurrency.txt`](claim_concurrency.txt)
+
+## 幂等压测（idempotency_test.py）
+
+命令：先启动服务，然后 `python scripts/idempotency_test.py --evidence`
+
+- 场景 A：5 个独立进程同时上报同一 running step 成功 →
+  0 个 5xx、`execution_logs` 恰好 1 行、任务状态只推进一次
+- 场景 B：5 个独立进程混合上报（成功/失败交错）→ 最终日志为 success（单调合并）
+
+结果文件：[`idempotency.txt`](idempotency.txt)
+
+## 重跑
+
+```bash
+docker compose up --build -d
+KAPIBARA_DSN=postgresql://app:app@localhost:5432/kapibara python scripts/concurrency_claim_test.py --evidence
+python scripts/idempotency_test.py --evidence
+```

@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: kapibara_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/kapibara_test
+      DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/kapibara_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - name: Alembic migrations against real PostgreSQL
+        run: alembic upgrade head
+      - run: pytest -v
+      - name: Multi-process claim stress (2 rounds smoke)
+        env:
+          CLAIM_ROUNDS: "2"
+          KAPIBARA_DSN: postgresql://app:app@localhost:5432/kapibara_test
+        run: python scripts/concurrency_claim_test.py
+      - name: Multi-process idempotency smoke (API server)
+        env:
+          DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/kapibara_test
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/api/tasks >/dev/null 2>&1 && break; sleep 1; done
+          KAPIBARA_BASE_URL=http://127.0.0.1:8000 python scripts/idempotency_test.py

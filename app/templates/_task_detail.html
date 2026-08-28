@@ -1,0 +1,61 @@
+<section class="card">
+  <h2>{{ task.name }} <span class="status s-{{ task.status }}">{{ task.status }}</span></h2>
+  <p class="muted">
+    ID {{ task.id }} · 组 {{ task.group_name }} (#{{ task.group_id }}) ·
+    worker {{ task.claimed_by or "-" }} · 创建 {{ task.created_at }} ·
+    启动 {{ task.started_at or "-" }} · 结束 {{ task.finished_at or "-" }}
+  </p>
+</section>
+
+<section class="card">
+  <h3>参数</h3>
+  <div class="params-grid">
+    <div>
+      <h4>L1 base（任务）</h4>
+      <pre>{{ task.base_parameters | tojson(indent=2) }}</pre>
+    </div>
+    <div>
+      <h4>L2 启动时组快照</h4>
+      <pre>{{ task.group_parameters_snapshot | tojson(indent=2) }}</pre>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Steps</h3>
+  <table class="steps">
+    <thead>
+      <tr><th>#</th><th>名称</th><th>L3 override</th><th>解析后参数</th><th>执行日志</th></tr>
+    </thead>
+    <tbody>
+    {% for s in task.steps %}
+      {% set log = (task.logs | selectattr('step_sequence', 'equalto', s.sequence) | list | first) %}
+      <tr>
+        <td>{{ s.sequence }}</td>
+        <td>{{ s.name }}</td>
+        <td><pre>{{ s.parameter_overrides | tojson(indent=2) }}</pre></td>
+        <td><pre>{{ s.resolved_parameters | tojson(indent=2) }}</pre></td>
+        <td>
+          {% if log %}
+            <span class="status s-{{ 'done' if log.success else 'failed' }}">{{ 'success' if log.success else 'failed' }}</span>
+            <span class="muted small">{{ log.completed_at }}</span>
+          {% else %}
+            <span class="muted">-</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h3>执行日志（唯一，按 step 唯一约束）</h3>
+  <ul class="logs">
+  {% for l in task.logs %}
+    <li>Step {{ l.step_sequence }} — {{ 'success' if l.success else 'failed' }} — {{ l.completed_at }}</li>
+  {% else %}
+    <li class="muted">暂无日志</li>
+  {% endfor %}
+  </ul>
+</section>

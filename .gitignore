@@ -1,0 +1,27 @@
+# secrets / env
+.env
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# local tooling not part of the deliverable
+tools/
+vendor/
+
+# scratch files produced by local runs
+.pytest_tmp/
+.ruff_tmp/
+pytest_*.txt
+*.result.txt
+r*.txt
+v*.txt
+c.txt
+p.txt
+
+# misc
+*.log
+.DS_Store

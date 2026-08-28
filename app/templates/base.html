@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kapibara 任务编排看板</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/vendor/htmx.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>🦫 Kapibara 任务编排</h1>
+    <nav>
+      <a href="/">看板</a>
+      <span class="muted">FastAPI · PostgreSQL · SKIP LOCKED · 幂等日志</span>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
