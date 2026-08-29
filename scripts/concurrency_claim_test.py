@@ -21,7 +21,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DSN = os.getenv("KAPIBARA_DSN", "postgresql://app:app@localhost:5432/kapibara")
+_raw_dsn = os.getenv("KAPIBARA_DSN") or os.getenv(
+    "DATABASE_URL", "postgresql://app:app@localhost:5432/kapibara"
+)
+DSN = _raw_dsn.replace("postgresql+psycopg://", "postgresql://", 1)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     DSN.replace("postgresql://", "postgresql+psycopg://", 1),
