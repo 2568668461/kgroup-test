@@ -17,7 +17,7 @@ __pycache__/
 .ruff_tmp/
 pytest_*.txt
 *.result.txt
-r*.txt
+# Dependency manifests (requirements*.txt) are deliverables and must stay tracked.
 v*.txt
 c.txt
 p.txt
