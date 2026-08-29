@@ -17,20 +17,39 @@ Browser (HTMX 2s polling) -> FastAPI API -> service state machine
 
 状态机：`pending -> claimed -> running -> done / failed`。失败 Step 可由成功重试升级；多 Step 任务恢复 running 时清除旧 `finished_at`。
 
-## 启动与验证
+## 启动、交互与验证
+
+### 从零启动（Docker）
 
 ```bash
-# 新机器推荐：PostgreSQL 16 + Alembic + API/看板
-cp .env.example .env
-docker compose up --build
-# http://localhost:8000 ；POST /api/demo/reset 生成五种状态
+cp .env.example .env                 # Windows PowerShell 可跳过此行
+docker compose up --build            # 首次构建；会自动迁移并启动 API
+```
 
+打开 <http://localhost:8000>。启动后调用一次 `POST /api/demo/reset`（可用浏览器开发者工具、curl 或下方 PowerShell 命令），看板就会生成五种状态的固定演示任务：
+
+```powershell
+Invoke-RestMethod -Method Post http://localhost:8000/api/demo/reset
+```
+
+首页任务表展示 `pending / claimed / running / done / failed`；`running` 行可直接点击“五次并发上报”，详情页也有同一入口。按钮发出 5 个独立 HTTP 请求，随后读取数据库确认目标 Step 仍只有 1 条日志。表格和详情每 2 秒自动刷新。
+
+### 测试与结果证据
+
+```bash
 pytest tests/test_parameters.py
 TEST_DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/kapibara_test pytest tests
 python scripts/concurrency_claim_test.py --evidence
 python scripts/idempotency_test.py --evidence   # 需先启动 API
 ```
 
-本机实测：33 tests passed；认领 `10进程 x 20轮 x 100任务 = 2000`，重复 `0`、遗漏 `0`；五进程重复成功与成功/失败混合上报均只保留一行且最终 success。完整输出见 [`evidence/`](evidence/README.md)。看板展示五种状态，可对 running Step 并发上报 5 次并显示每次响应与该 Step 最终日志数。
+PowerShell 设置测试数据库变量：
+
+```powershell
+$env:TEST_DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara_test"
+python -m pytest tests
+```
+
+完整运行结果在 [`evidence/claim_concurrency.txt`](evidence/claim_concurrency.txt)（10 进程 × 20 轮 × 100 任务，重复 0、遗漏 0）和 [`evidence/idempotency.txt`](evidence/idempotency.txt)（5 进程重复/混合上报，日志始终 1 行，最终 success）；证据说明见 [`evidence/README.md`](evidence/README.md)。本机单元与集成测试共 33 项通过。
 
 实际投入约 2 天（2026-08-28 至 2026-08-29）。按题目规模未引入 Redis/MQ，也未实现 worker lease/心跳：worker 崩溃后任务不会重复认领，但会停在 claimed/running；生产版应在数据库事务中按 lease 超时回收。
