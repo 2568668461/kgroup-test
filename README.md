@@ -38,7 +38,24 @@ Invoke-RestMethod -Method Post http://localhost:8000/api/demo/reset
 
 ### 没有 Docker（Windows / 本机 PostgreSQL）
 
-先安装 PostgreSQL 16，并创建题目使用的用户和数据库（也可以在 pgAdmin 中完成）：
+#### 1. 安装 PostgreSQL 16
+
+从 [PostgreSQL Windows 官方下载页](https://www.postgresql.org/download/windows/) 下载 EDB 安装程序并运行：
+
+- 版本选择 PostgreSQL 16，安装组件保留 **PostgreSQL Server、pgAdmin 4、Command Line Tools**；
+- 数据目录使用默认值，端口保持 `5432`；
+- 为超级用户 `postgres` 设置一个本地密码，安装完成后记住它；
+- 如果 PowerShell 中找不到 `psql`，把 `C:\Program Files\PostgreSQL\16\bin` 加入系统 PATH，或在下面命令中使用该目录的完整路径。
+
+重新打开 PowerShell，确认安装成功：
+
+```powershell
+psql --version                         # 应显示 PostgreSQL 16.x
+```
+
+#### 2. 创建项目数据库
+
+使用安装程序自带的 SQL 命令行（或 pgAdmin）创建题目使用的用户和数据库：
 
 ```powershell
 psql -U postgres -c "CREATE ROLE app LOGIN PASSWORD 'app';"
