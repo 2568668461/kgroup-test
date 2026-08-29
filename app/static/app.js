@@ -73,7 +73,7 @@ async function completeFive(btn) {
   let ok = 0;
   results.forEach((r, i) => {
     if (r.status === "fulfilled") {
-      ok++;
+      if (r.value.status >= 200 && r.value.status < 300) ok++;
       const d = r.value.data;
       rows +=
         `<tr><td>#${i + 1}</td><td>${r.value.status}</td>` +
@@ -86,13 +86,13 @@ async function completeFive(btn) {
   });
 
   const detail = await fetch(`/api/tasks/${taskId}`).then((r) => r.json());
-  const logCount = detail.logs.length;
+  const logCount = detail.logs.filter((log) => log.step_sequence === seq).length;
 
   show(
     `<b>五次并发上报 step ${seq}（任务 #${taskId}）</b>` +
     `<table class="five"><thead><tr><th>请求</th><th>HTTP</th><th>outcome</th><th>task_status</th><th>日志</th></tr></thead>` +
     `<tbody>${rows}</tbody></table>` +
-    `<p>5 次请求中 <b>${ok}</b> 次成功返回；数据库执行日志行数 = <b>${logCount}</b>（应为 1）` +
+    `<p>5 次请求中 <b>${ok}</b> 次返回 2xx；目标 Step 的数据库日志行数 = <b>${logCount}</b>（应为 1）` +
     `；任务最终状态 = <b>${esc(detail.status)}</b></p>`
   );
   btn.disabled = false;

@@ -25,3 +25,31 @@ duplicate_claims=0
 missing_tasks=0
 RESULT=PASS
 
+=== 2026-08-29T07:44:35+00:00 (spawn, production claim service, independent sessions) ===
+round=01 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[16, 24, 7, 21, 10, 2, 14, 1, 4, 1]
+round=02 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[19, 18, 13, 5, 9, 10, 3, 14, 3, 6]
+round=03 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[19, 10, 8, 19, 17, 5, 3, 6, 11, 2]
+round=04 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[13, 11, 4, 14, 4, 20, 16, 9, 7, 2]
+round=05 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[11, 1, 1, 0, 9, 21, 24, 13, 5, 15]
+round=06 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[12, 8, 6, 2, 16, 10, 9, 17, 15, 5]
+round=07 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[54, 5, 9, 1, 4, 9, 11, 5, 1, 1]
+round=08 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[16, 6, 18, 4, 13, 8, 16, 7, 2, 10]
+round=09 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[0, 14, 13, 5, 10, 24, 16, 10, 7, 1]
+round=10 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[18, 0, 9, 11, 7, 16, 12, 5, 16, 6]
+round=11 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[14, 3, 7, 2, 18, 14, 6, 10, 16, 10]
+round=12 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[5, 9, 10, 12, 12, 22, 18, 3, 3, 6]
+round=13 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[30, 8, 15, 9, 4, 13, 5, 1, 9, 6]
+round=14 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[6, 7, 10, 12, 16, 15, 5, 16, 11, 2]
+round=15 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[6, 4, 19, 2, 9, 19, 8, 10, 14, 9]
+round=16 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[19, 3, 10, 14, 5, 13, 9, 7, 4, 16]
+round=17 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[6, 4, 3, 6, 16, 10, 17, 13, 15, 10]
+round=18 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[8, 12, 10, 5, 4, 11, 2, 14, 16, 18]
+round=19 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[16, 29, 9, 0, 14, 14, 6, 7, 0, 5]
+round=20 claimed=100 unique=100 duplicates=0 missing=0 pending_left=0 foreign_claims=0 per_worker=[12, 0, 10, 7, 14, 19, 21, 8, 5, 4]
+rounds=20 workers=10 tasks_per_round=100
+total_claims=2000
+duplicate_claims=0
+missing_tasks=0
+foreign_claims=0
+RESULT=PASS
+

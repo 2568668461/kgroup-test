@@ -6,9 +6,10 @@
 
 命令：`python scripts/concurrency_claim_test.py --evidence`
 
-- 10 个 worker 进程（`multiprocessing` spawn 模式，每进程独立 psycopg 连接）
+- 10 个 worker 进程（`multiprocessing` spawn 模式，每进程独立 SQLAlchemy session/连接）
+- 每个进程直接调用正式 `task_service.claim_next()`，不复制认领 SQL
 - 每轮 100 个 pending 任务，连续 20 轮
-- 校验：总认领数 = 2000，唯一任务 ID = 2000，重复 = 0，每轮剩余 pending = 0
+- 按每轮实际插入的任务 ID 校验：总认领数 = 2000、重复 = 0、遗漏 = 0、剩余 pending = 0
 
 结果文件：[`claim_concurrency.txt`](claim_concurrency.txt)
 

@@ -9,8 +9,8 @@ __pycache__/
 .ruff_cache/
 
 # local tooling not part of the deliverable
-tools/
-vendor/
+/tools/
+/vendor/
 
 # scratch files produced by local runs
 .pytest_tmp/

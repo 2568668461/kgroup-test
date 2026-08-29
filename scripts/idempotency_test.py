@@ -80,7 +80,14 @@ def setup_running_task() -> tuple[int, int, str]:
             "steps": [{"name": "s1"}, {"name": "s2"}],
         },
     )[1]["id"]
-    token = post_json("/api/workers/idem-w/claim-next", {})[1]["claim_token"]
+    # The database may contain older pending tasks from a previous demo. Keep
+    # claiming until this script owns the task it just created.
+    while True:
+        claim_status, claim = post_json("/api/workers/idem-w/claim-next", {})
+        assert claim_status == 200 and claim is not None, "target task was not claimable"
+        if claim["task_id"] == tid:
+            token = claim["claim_token"]
+            break
     status, _ = post_json(f"/api/tasks/{tid}/start", {"claim_token": token})
     assert status == 200, "setup failed"
     return tid, 1, token

@@ -55,7 +55,8 @@ class Task(Base):
     __table_args__ = (
         # claim ownership: whoever sets claimed must also set both columns
         CheckConstraint(
-            "(status IN ('pending')) = (claim_token IS NULL AND claimed_by IS NULL)",
+            "(status = 'pending' AND claim_token IS NULL AND claimed_by IS NULL) OR "
+            "(status <> 'pending' AND claim_token IS NOT NULL AND claimed_by IS NOT NULL)",
             name="ck_tasks_claim_consistency",
         ),
     )

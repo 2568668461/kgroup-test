@@ -173,8 +173,11 @@ def complete_step(
 
     new_status = _recompute_status(task.steps, logs_after)
     if new_status is not task.status:
-        if new_status in (TaskStatus.DONE, TaskStatus.FAILED) and task.finished_at is None:
+        if new_status in (TaskStatus.DONE, TaskStatus.FAILED):
             task.finished_at = datetime.now(UTC)
+        else:
+            # A successful retry reopens a failed multi-step task.
+            task.finished_at = None
         task.status = new_status
     session.flush()
 
@@ -240,6 +243,9 @@ def list_tasks(session: Session) -> list[dict]:
                 "group_name": task.group.name,
                 "status": task.status.value,
                 "claimed_by": task.claimed_by,
+                # Used only by the server-rendered local demo. TaskSummary's
+                # response model excludes it from GET /api/tasks.
+                "claim_token": task.claim_token,
                 "current_step": frontier.sequence if frontier else None,
                 "completed_steps": sum(1 for log in logs.values() if log.success),
                 "total_steps": len(steps),

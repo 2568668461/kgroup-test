@@ -2,8 +2,8 @@
 
   10 worker processes (multiprocessing spawn) x 100 pending tasks x 20 rounds.
 
-Each process opens its OWN psycopg connection and loops the atomic
-FOR UPDATE SKIP LOCKED claim statement until the queue is empty.
+Each process creates its OWN SQLAlchemy session/connection and calls the
+production claim_next service until the queue is empty.
 
 Run (requires a running PostgreSQL):
     python scripts/concurrency_claim_test.py
@@ -17,61 +17,52 @@ from __future__ import annotations
 import multiprocessing as mp
 import os
 import sys
-import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
 DSN = os.getenv("KAPIBARA_DSN", "postgresql://app:app@localhost:5432/kapibara")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    DSN.replace("postgresql://", "postgresql+psycopg://", 1),
+)
 ROUNDS = int(os.getenv("CLAIM_ROUNDS", "20"))
 WORKERS = int(os.getenv("CLAIM_WORKERS", "10"))
 TASKS_PER_ROUND = int(os.getenv("CLAIM_TASKS", "100"))
 
-CLAIM_SQL = """
-WITH candidate AS (
-    SELECT id
-    FROM tasks
-    WHERE status = 'pending'
-    ORDER BY created_at, id
-    FOR UPDATE SKIP LOCKED
-    LIMIT 1
-)
-UPDATE tasks
-SET status = 'claimed',
-    claimed_by = %(worker_id)s,
-    claim_token = %(claim_token)s,
-    claimed_at = NOW()
-FROM candidate
-WHERE tasks.id = candidate.id
-RETURNING tasks.id;
-"""
-
-
-def worker_main(worker_id: int, dsn: str) -> list[int]:
+def worker_main(worker_id: int, database_url: str, project_root: str) -> list[int]:
     """Runs in a SEPARATE spawned process with its OWN connection."""
-    import psycopg
+    os.environ["DATABASE_URL"] = database_url
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+
+    from app.database import SessionLocal
+    from app.services.task_service import claim_next
 
     claimed: list[int] = []
-    with psycopg.connect(dsn, autocommit=True) as conn:
-        while True:
-            with conn.cursor() as cur:
-                cur.execute(CLAIM_SQL, {"worker_id": f"proc-{worker_id}", "claim_token": uuid.uuid4()})
-                row = cur.fetchone()
-            if row is None:
+    while True:
+        with SessionLocal.begin() as session:
+            task = claim_next(session, f"proc-{worker_id}")
+            if task is None:
                 break
-            claimed.append(row[0])
+            claimed.append(task.id)
     return claimed
 
 
-def seed_round(dsn: str, group_id: int, round_no: int) -> None:
+def seed_round(dsn: str, group_id: int, round_no: int) -> set[int]:
     import psycopg
 
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO tasks (group_id, name, status) "
-                "SELECT %s, %s || n, 'pending' FROM generate_series(1, %s) AS n",
+                "SELECT %s, %s || n, 'pending' FROM generate_series(1, %s) AS n "
+                "RETURNING id",
                 (group_id, f"stress-r{round_no}-t", TASKS_PER_ROUND),
             )
+            seeded_ids = {row[0] for row in cur.fetchall()}
         conn.commit()
+    return seeded_ids
 
 
 def ensure_group(dsn: str) -> int:
@@ -95,19 +86,26 @@ def main() -> int:
     total_claims = 0
     duplicate_claims = 0
     missing_tasks = 0
+    foreign_claims = 0
     per_round: list[str] = []
 
     for round_no in range(1, ROUNDS + 1):
-        seed_round(dsn, group_id, round_no)
+        seeded_ids = seed_round(dsn, group_id, round_no)
 
         with ctx.Pool(WORKERS) as pool:
-            results = pool.starmap(worker_main, [(i, dsn) for i in range(WORKERS)])
+            results = pool.starmap(
+                worker_main,
+                [(i, DATABASE_URL, str(ROOT)) for i in range(WORKERS)],
+            )
 
         all_ids: list[int] = [tid for sub in results for tid in sub]
-        total_claims += len(all_ids)
-        duplicates = len(all_ids) - len(set(all_ids))
+        target_ids = [tid for tid in all_ids if tid in seeded_ids]
+        foreign = len(all_ids) - len(target_ids)
+        total_claims += len(target_ids)
+        foreign_claims += foreign
+        duplicates = len(target_ids) - len(set(target_ids))
         duplicate_claims += duplicates
-        missing = TASKS_PER_ROUND - len(set(all_ids))
+        missing = len(seeded_ids - set(target_ids))
         missing_tasks += missing
 
         # the claimed rows must be exactly this round's seeded tasks
@@ -116,16 +114,14 @@ def main() -> int:
         with psycopg.connect(dsn) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT COUNT(*) FROM tasks WHERE status = 'pending' AND name LIKE %s",
-                    (f"stress-r{round_no}%",),
+                    "SELECT COUNT(*) FROM tasks WHERE status = 'pending' AND id = ANY(%s)",
+                    (list(seeded_ids),),
                 )
                 leftover = cur.fetchone()[0]
-        missing += leftover
-        missing_tasks += leftover
-
         per_round.append(
-            f"round={round_no:02d} claimed={len(all_ids)} unique={len(set(all_ids))} "
-            f"duplicates={duplicates} pending_left={leftover} "
+            f"round={round_no:02d} claimed={len(target_ids)} unique={len(set(target_ids))} "
+            f"duplicates={duplicates} missing={missing} pending_left={leftover} "
+            f"foreign_claims={foreign} "
             f"per_worker={[len(r) for r in results]}"
         )
 
@@ -135,6 +131,7 @@ def main() -> int:
         f"total_claims={total_claims}\n"
         f"duplicate_claims={duplicate_claims}\n"
         f"missing_tasks={missing_tasks}\n"
+        f"foreign_claims={foreign_claims}\n"
         f"RESULT={verdict}\n"
     )
 
@@ -148,7 +145,9 @@ def main() -> int:
         os.makedirs(evidence_dir, exist_ok=True)
         path = os.path.join(evidence_dir, "claim_concurrency.txt")
         with open(path, "a", encoding="utf-8") as fh:
-            fh.write(f"=== {timestamp} (spawn, direct psycopg connections) ===\n")
+            fh.write(
+                f"=== {timestamp} (spawn, production claim service, independent sessions) ===\n"
+            )
             fh.write("\n".join(per_round) + "\n")
             fh.write(summary + "\n")
         print(f"[evidence written to {os.path.abspath(path)}]", file=sys.stderr)

@@ -16,3 +16,21 @@
 processes=5 scenarioA=PASS scenarioB=PASS
 RESULT=PASS
 
+=== 2026-08-29T07:44:45+00:00 (spawn processes, independent HTTP connections) ===
+[A] task=5208 step=1 5x concurrent success
+    req#1: HTTP 200 outcome=duplicate_no_change
+    req#2: HTTP 200 outcome=created
+    req#3: HTTP 200 outcome=duplicate_no_change
+    req#4: HTTP 200 outcome=duplicate_no_change
+    req#5: HTTP 200 outcome=duplicate_no_change
+    server_errors=0 log_rows=1 (expected 1) final_task_status=running
+[B] task=5209 step=1 mixed reports=[True, False, True, False, False]
+    req#1: HTTP 200 outcome=created
+    req#2: HTTP 200 outcome=duplicate_no_change
+    req#3: HTTP 200 outcome=duplicate_no_change
+    req#4: HTTP 200 outcome=duplicate_no_change
+    req#5: HTTP 200 outcome=duplicate_no_change
+    server_errors=0 log_rows=1 final_success=True (expected True) task_status=running
+processes=5 scenarioA=PASS scenarioB=PASS
+RESULT=PASS
+

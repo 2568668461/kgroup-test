@@ -8,6 +8,10 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+
 BASE = "postgresql+psycopg://app:app@localhost:5432/kapibara_test"
 
 
@@ -158,6 +162,8 @@ def test_failure_marks_task_failed_then_success_upgrades(client):
         f"/api/tasks/{tid}/steps/1/complete", json={"claim_token": token, "success": False}
     )
     assert r.json()["task_status"] == "failed"
+    failed_at = client.get(f"/api/tasks/{tid}").json()["finished_at"]
+    assert failed_at is not None
 
     # a later success for the SAME step monotonically upgrades the log
     r = client.post(
@@ -167,12 +173,32 @@ def test_failure_marks_task_failed_then_success_upgrades(client):
     assert r.json()["task_status"] == "running"
     detail = client.get(f"/api/tasks/{tid}").json()
     assert detail["logs"][0]["success"] is True
+    assert detail["finished_at"] is None
 
     # task continues and completes
     r = client.post(
         f"/api/tasks/{tid}/steps/2/complete", json={"claim_token": token, "success": True}
     )
     assert r.json()["task_status"] == "done"
+    assert client.get(f"/api/tasks/{tid}").json()["finished_at"] > failed_at
+
+
+@pytest.mark.parametrize(
+    ("claimed_by", "claim_token"),
+    [(None, uuid.uuid4()), ("worker-only", None)],
+)
+def test_database_rejects_partial_claim_ownership(client, claimed_by, claim_token):
+    from app.database import SessionLocal
+
+    gid = _make_group(client)
+    with pytest.raises(IntegrityError), SessionLocal.begin() as session:
+        session.execute(
+            text(
+                "INSERT INTO tasks (group_id, name, status, claimed_by, claim_token) "
+                "VALUES (:group_id, 'invalid-owner', 'claimed', :claimed_by, :claim_token)"
+            ),
+            {"group_id": gid, "claimed_by": claimed_by, "claim_token": claim_token},
+        )
 
 
 def test_success_never_downgraded_by_late_failure(client):

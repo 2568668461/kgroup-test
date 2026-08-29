@@ -40,12 +40,16 @@ pytestmark = pytest.mark.integration
 def engine():
     if not PG_AVAILABLE:
         pytest.skip("TEST_DATABASE_URL is not reachable — start a real PostgreSQL to run these")
-    from app import models  # noqa: F401
-    from app.database import Base
-
     eng = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
-    Base.metadata.drop_all(eng)
-    Base.metadata.create_all(eng)
+    with eng.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+
+    from alembic import command
+    from alembic.config import Config
+
+    config = Config("alembic.ini")
+    command.upgrade(config, "head")
     yield eng
     eng.dispose()
 
