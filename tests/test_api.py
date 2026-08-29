@@ -77,6 +77,8 @@ def test_full_state_flow_pending_claimed_running_done(client):
         f"/api/tasks/{tid}/steps/1/complete", json={"claim_token": token, "success": True}
     )
     assert r.json()["task_status"] == "running"
+    running_detail = client.get(f"/api/tasks/{tid}").json()
+    assert running_detail["updated_at"] == running_detail["logs"][0]["completed_at"]
 
     r = client.post(
         f"/api/tasks/{tid}/steps/2/complete", json={"claim_token": token, "success": True}

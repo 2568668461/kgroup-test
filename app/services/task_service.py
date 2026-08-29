@@ -225,6 +225,13 @@ def _recompute_status(steps: list[Step], logs: dict[int, ExecutionLog]) -> TaskS
     return TaskStatus.RUNNING
 
 
+def _updated_at(task: Task) -> datetime:
+    """Return the timestamp of the most recent persisted task event."""
+    timestamps = [task.created_at, task.claimed_at, task.started_at, task.finished_at]
+    timestamps.extend(log.completed_at for log in task.logs)
+    return max(ts for ts in timestamps if ts is not None)
+
+
 # ------------------------------------------------------------- queries -----
 
 
@@ -249,7 +256,7 @@ def list_tasks(session: Session) -> list[dict]:
                 "current_step": frontier.sequence if frontier else None,
                 "completed_steps": sum(1 for log in logs.values() if log.success),
                 "total_steps": len(steps),
-                "updated_at": task.finished_at or task.started_at or task.claimed_at or task.created_at,
+                "updated_at": _updated_at(task),
             }
         )
     return result
@@ -273,7 +280,7 @@ def get_task_detail(session: Session, task_id: int) -> dict | None:
         "claimed_at": task.claimed_at,
         "started_at": task.started_at,
         "finished_at": task.finished_at,
-        "updated_at": task.finished_at or task.started_at or task.claimed_at or task.created_at,
+        "updated_at": _updated_at(task),
         "current_step": (
             frontier.sequence
             if (frontier := _frontier(task.steps, {log.step_sequence: log for log in task.logs}))
