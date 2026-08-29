@@ -88,6 +88,12 @@ $env:KAPIBARA_BASE_URL = "http://127.0.0.1:8000"
 docker compose exec -e KAPIBARA_DSN=postgresql://app:app@db:5432/kapibara_test app python scripts/concurrency_claim_test.py --evidence
 ```
 
+运行认领压测前，先在 Docker 网络内为 `kapibara_test` 执行一次迁移：
+
+```powershell
+docker compose exec -e DATABASE_URL=postgresql+psycopg://app:app@db:5432/kapibara_test app alembic upgrade head
+```
+
 完整运行结果在 [`evidence/claim_concurrency.txt`](evidence/claim_concurrency.txt)（10 进程 × 20 轮 × 100 任务，重复 0、遗漏 0）和 [`evidence/idempotency.txt`](evidence/idempotency.txt)（5 进程重复/混合上报，日志始终 1 行，最终 success）；证据说明见 [`evidence/README.md`](evidence/README.md)。本机单元与集成测试共 33 项通过。
 
 实际投入约 2 天（2026-08-28 至 2026-08-29）。按题目规模未引入 Redis/MQ，也未实现 worker lease/心跳：worker 崩溃后任务不会重复认领，但会停在 claimed/running；生产版应在数据库事务中按 lease 超时回收。

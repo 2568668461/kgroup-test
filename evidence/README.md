@@ -48,6 +48,7 @@ $env:KAPIBARA_BASE_URL = "http://127.0.0.1:8000"
 如果宿主机 `127.0.0.1:5432` 的 PostgreSQL 认证失败，认领压测改在 Docker 网络内执行：
 
 ```powershell
+docker compose exec -e DATABASE_URL=postgresql+psycopg://app:app@db:5432/kapibara_test app alembic upgrade head
 docker compose exec -e KAPIBARA_DSN=postgresql://app:app@db:5432/kapibara_test app python scripts/concurrency_claim_test.py --evidence
 ```
 
