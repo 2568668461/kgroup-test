@@ -22,6 +22,8 @@ Browser (HTMX 2s polling) -> FastAPI API -> service state machine
 ### 从零启动（Docker）
 
 ```bash
+git clone https://github.com/2568668461/kgroup-test.git
+cd kgroup-test
 cp .env.example .env                 # Windows PowerShell 可跳过此行
 docker compose up --build            # 首次构建；会自动迁移并启动 API
 ```
