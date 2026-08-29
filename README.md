@@ -52,49 +52,6 @@ Invoke-RestMethod -Method Post http://localhost:8000/api/demo/reset
 
 首页任务表展示 `pending / claimed / running / done / failed`；`running` 行可直接点击“五次并发上报”，详情页也有同一入口。按钮发出 5 个独立 HTTP 请求，随后读取数据库确认目标 Step 仍只有 1 条日志。表格和详情每 2 秒自动刷新。
 
-### 没有 Docker（Windows / 本机 PostgreSQL）
-
-#### 1. 安装 PostgreSQL 16
-
-从 [PostgreSQL Windows 官方下载页](https://www.postgresql.org/download/windows/) 下载 EDB 安装程序并运行：
-
-- 版本选择 PostgreSQL 16，安装组件保留 **PostgreSQL Server、pgAdmin 4、Command Line Tools**；
-- 数据目录使用默认值，端口保持 `5432`；
-- 为超级用户 `postgres` 设置一个本地密码，安装完成后记住它；
-- 如果 PowerShell 中找不到 `psql`，把 `C:\Program Files\PostgreSQL\16\bin` 加入系统 PATH，或在下面命令中使用该目录的完整路径。
-
-重新打开 PowerShell，确认安装成功：
-
-```powershell
-psql --version                         # 应显示 PostgreSQL 16.x
-```
-
-#### 2. 创建项目数据库
-
-使用安装程序自带的 SQL 命令行（或 pgAdmin）创建题目使用的用户和数据库：
-
-```powershell
-psql -U postgres -c "CREATE ROLE app LOGIN PASSWORD 'app';"
-createdb -U postgres -O app kapibara
-createdb -U postgres -O app kapibara_test
-```
-
-然后在仓库目录安装依赖、迁移并启动：
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-$env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara"
-.\.venv\Scripts\alembic.exe upgrade head
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-另开一个 PowerShell 窗口生成演示数据：
-
-```powershell
-Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/demo/reset
-```
-
 ### 测试与结果证据
 
 ```bash
