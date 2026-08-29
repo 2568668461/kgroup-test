@@ -65,19 +65,19 @@ Windows PowerShell（每条命令单独执行）：
 
 ```powershell
 py -3.12 -m venv .venv
-\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+& .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 $env:TEST_DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara_test"
-.\.venv\Scripts\python.exe -m pytest tests/test_parameters.py
-.\.venv\Scripts\python.exe -m pytest tests
+& .\.venv\Scripts\python.exe -m pytest tests/test_parameters.py
+& .\.venv\Scripts\python.exe -m pytest tests
 
 # 多进程认领：使用测试数据库，10 进程 × 20 轮
 $env:KAPIBARA_DSN = "postgresql://app:app@localhost:5432/kapibara_test"
 $env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara_test"
-.\.venv\Scripts\python.exe scripts/concurrency_claim_test.py --evidence
+& .\.venv\Scripts\python.exe scripts/concurrency_claim_test.py --evidence
 
 # 幂等上报：保持 Docker app 容器运行，目标 API 为 localhost:8000
 $env:KAPIBARA_BASE_URL = "http://127.0.0.1:8000"
-.\.venv\Scripts\python.exe scripts/idempotency_test.py --evidence
+& .\.venv\Scripts\python.exe scripts/idempotency_test.py --evidence
 ```
 
 幂等测试必须在 Docker 的 `app` 容器运行时执行；认领测试和普通测试连接 `kapibara_test`。命令不要粘成一行。

@@ -37,12 +37,12 @@ python scripts/idempotency_test.py --evidence
 Windows PowerShell（每条命令单独执行，需先启动 Docker Compose）：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+& .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 $env:KAPIBARA_DSN = "postgresql://app:app@localhost:5432/kapibara_test"
 $env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara_test"
-.\.venv\Scripts\python.exe scripts/concurrency_claim_test.py --evidence
+& .\.venv\Scripts\python.exe scripts/concurrency_claim_test.py --evidence
 $env:KAPIBARA_BASE_URL = "http://127.0.0.1:8000"
-.\.venv\Scripts\python.exe scripts/idempotency_test.py --evidence
+& .\.venv\Scripts\python.exe scripts/idempotency_test.py --evidence
 ```
 
 如果宿主机 `127.0.0.1:5432` 的 PostgreSQL 认证失败，认领压测改在 Docker 网络内执行：
