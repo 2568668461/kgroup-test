@@ -34,6 +34,32 @@ Invoke-RestMethod -Method Post http://localhost:8000/api/demo/reset
 
 首页任务表展示 `pending / claimed / running / done / failed`；`running` 行可直接点击“五次并发上报”，详情页也有同一入口。按钮发出 5 个独立 HTTP 请求，随后读取数据库确认目标 Step 仍只有 1 条日志。表格和详情每 2 秒自动刷新。
 
+### 没有 Docker（Windows / 本机 PostgreSQL）
+
+先安装 PostgreSQL 16，并创建题目使用的用户和数据库（也可以在 pgAdmin 中完成）：
+
+```powershell
+psql -U postgres -c "CREATE ROLE app LOGIN PASSWORD 'app';"
+createdb -U postgres -O app kapibara
+createdb -U postgres -O app kapibara_test
+```
+
+然后在仓库目录安装依赖、迁移并启动：
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+$env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/kapibara"
+.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+另开一个 PowerShell 窗口生成演示数据：
+
+```powershell
+Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/demo/reset
+```
+
 ### 测试与结果证据
 
 ```bash
