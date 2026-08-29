@@ -45,5 +45,17 @@ $env:KAPIBARA_BASE_URL = "http://127.0.0.1:8000"
 .\.venv\Scripts\python.exe scripts/idempotency_test.py --evidence
 ```
 
+如果宿主机 `127.0.0.1:5432` 的 PostgreSQL 认证失败，认领压测改在 Docker 网络内执行：
+
+```powershell
+docker compose exec -e KAPIBARA_DSN=postgresql://app:app@db:5432/kapibara_test app python scripts/concurrency_claim_test.py --evidence
+```
+
+该命令仍使用 10 个真实进程和独立连接。证据文件会先写入容器的 `/srv/evidence/`，可复制回宿主机：
+
+```powershell
+docker cp kgroup-test-app-1:/srv/evidence/claim_concurrency.txt .\evidence\claim_concurrency.txt
+```
+
 认领结果追加到 [`claim_concurrency.txt`](claim_concurrency.txt)，幂等结果追加到
 [`idempotency.txt`](idempotency.txt)。
