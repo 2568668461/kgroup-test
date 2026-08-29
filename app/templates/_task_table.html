@@ -15,7 +15,7 @@
       <td>{{ t.claimed_by or "-" }}</td>
       <td>{{ t.current_step or "-" }}</td>
       <td>{{ t.completed_steps }}/{{ t.total_steps }}</td>
-      <td class="muted small">{{ t.updated_at }}</td>
+      <td class="muted small">{{ t.updated_at | local_time }}</td>
       <td>
         <a href="/tasks/{{ t.id }}">详情</a>
         {% if t.status == 'running' and t.current_step and t.claim_token %}

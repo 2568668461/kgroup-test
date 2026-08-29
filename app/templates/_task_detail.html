@@ -2,8 +2,8 @@
   <h2>{{ task.name }} <span class="status s-{{ task.status }}">{{ task.status }}</span></h2>
   <p class="muted">
     ID {{ task.id }} · 组 {{ task.group_name }} (#{{ task.group_id }}) ·
-    worker {{ task.claimed_by or "-" }} · 创建 {{ task.created_at }} ·
-    启动 {{ task.started_at or "-" }} · 结束 {{ task.finished_at or "-" }}
+    worker {{ task.claimed_by or "-" }} · 创建 {{ task.created_at | local_time }} ·
+    启动 {{ task.started_at | local_time }} · 结束 {{ task.finished_at | local_time }}
   </p>
 </section>
 
@@ -38,7 +38,7 @@
         <td>
           {% if log %}
             <span class="status s-{{ 'done' if log.success else 'failed' }}">{{ 'success' if log.success else 'failed' }}</span>
-            <span class="muted small">{{ log.completed_at }}</span>
+            <span class="muted small">{{ log.completed_at | local_time }}</span>
           {% else %}
             <span class="muted">-</span>
           {% endif %}
@@ -53,7 +53,7 @@
   <h3>执行日志（唯一，按 step 唯一约束）</h3>
   <ul class="logs">
   {% for l in task.logs %}
-    <li>Step {{ l.step_sequence }} — {{ 'success' if l.success else 'failed' }} — {{ l.completed_at }}</li>
+    <li>Step {{ l.step_sequence }} — {{ 'success' if l.success else 'failed' }} — {{ l.completed_at | local_time }}</li>
   {% else %}
     <li class="muted">暂无日志</li>
   {% endfor %}

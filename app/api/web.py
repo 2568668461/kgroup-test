@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
@@ -14,6 +16,16 @@ router = APIRouter()
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+def local_time(value: datetime | None) -> str:
+    """Format persisted UTC timestamps for the China-based dashboard reader."""
+    if value is None:
+        return "-"
+    return value.astimezone(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M:%S")
+
+
+templates.env.filters["local_time"] = local_time
 
 
 def _render_context(request: Request, tasks: list[dict]) -> dict:
