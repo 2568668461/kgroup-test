@@ -21,6 +21,22 @@ Browser (HTMX 2s polling) -> FastAPI API -> service state machine
 
 ### 从零启动（Docker）
 
+#### 1. 安装 Docker Desktop（Windows）
+
+从 [Docker Desktop for Windows 官方页面](https://docs.docker.com/desktop/setup/install/windows-install/) 下载并安装 Docker Desktop：
+
+- 安装程序选择默认的 **WSL 2 based engine**；Windows 功能中的虚拟机平台和 WSL 2 按安装程序提示启用；
+- 确认 BIOS/UEFI 已开启 CPU 虚拟化；安装结束后按提示重启 Windows；
+- 启动 Docker Desktop，等待状态显示 **Engine running**；
+- 重新打开 PowerShell，确认命令可用：
+
+```powershell
+docker --version
+docker compose version
+```
+
+#### 2. 克隆并启动项目
+
 ```bash
 git clone https://github.com/2568668461/kgroup-test.git
 cd kgroup-test
